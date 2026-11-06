@@ -54,8 +54,8 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          target: google_apis
-          profile: pixel_7_pro
+          target: default
+          profile: pixel_5
           disable-animations: true
           script: bash qa_emulator_debug.sh
       - name: Publish tested APK
