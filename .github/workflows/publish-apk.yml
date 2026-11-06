@@ -1,0 +1,39 @@
+name: Publish Pirate Radio W92LF APK for direct download
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-apk.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out public repository
+        uses: actions/checkout@v4
+      - name: Retrieve previously tested APK
+        uses: actions/download-artifact@v4
+        with:
+          name: PirateRadioW92LF-v4.2-Tested-APK
+          run-id: 42204452864
+          github-token: ${{ github.token }}
+          path: compiled
+      - name: Validate APK and publish permanent download
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f compiled/app-debug.apk
+          unzip -t compiled/app-debug.apk >/dev/null
+          mkdir -p downloads
+          cp compiled/app-debug.apk downloads/PirateRadioW92LF_v4_2.apk
+          sha256sum downloads/PirateRadioW92LF_v4_2.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/PirateRadioW92LF_v4_2.apk
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish tested Pirate Radio W92LF v4.2 APK for direct download"
+            git push origin HEAD:main
+          fi
