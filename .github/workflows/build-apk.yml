@@ -57,10 +57,7 @@ jobs:
           target: google_apis
           profile: pixel_7_pro
           disable-animations: true
-          script: |
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell pm grant com.pirateradio.w92lf android.permission.POST_NOTIFICATIONS
-            python3 scripts/smoke_emulator.py
+          script: bash qa_emulator_debug.sh
       - name: Publish tested APK
         uses: actions/upload-artifact@v4
         with:
