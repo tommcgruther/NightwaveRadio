@@ -1,0 +1,43 @@
+name: Verify W92LF archive discovery
+on:
+  push:
+    paths:
+      - .github/workflows/verify-archive-discovery.yml
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Test archive API search and MP3 verification
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, urllib.parse, urllib.request
+          queries=[
+            'mediatype:audio AND (title:"rave tape" OR title:"pirate radio mix" OR title:"jungle dj")',
+            'mediatype:audio AND ((title:"rave" OR subject:"rave"))',
+            'mediatype:audio AND ((title:"jungle" OR subject:"jungle"))',
+          ]
+          for query in queries:
+            params=urllib.parse.urlencode({'q':query,'fl[]':['identifier','title','creator'],'rows':24,'sort[]':'downloads desc','output':'json'},doseq=True)
+            req=urllib.request.Request('https://archive.org/advancedsearch.php?'+params,headers={'User-Agent':'PirateRadioW92LF/4.0','Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=30) as r: data=json.load(r)
+            docs=data.get('response',{}).get('docs',[])
+            print('QUERY',query,'RESULTS',data['response']['numFound'],flush=True)
+            verified=0
+            for item in docs[:8]:
+              try:
+                ident=item['identifier']
+                with urllib.request.urlopen('https://archive.org/metadata/'+urllib.parse.quote(ident),timeout=20) as r: md=json.load(r)
+                mp3=[f.get('name') for f in md.get('files',[]) if f.get('name','').lower().endswith('.mp3') and f.get('source') in ('original','derivative')]
+                if not mp3: continue
+                url='https://archive.org/download/'+urllib.parse.quote(ident)+'/'+urllib.parse.quote(mp3[0],safe='/')
+                with urllib.request.urlopen(urllib.request.Request(url,headers={'Range':'bytes=0-63','User-Agent':'PirateRadioW92LF/4.0'}),timeout=20) as a:
+                  first=a.read(4)
+                  if first[:3]==b'ID3' or (first[0]==255 and (first[1]&224)==224):
+                    verified+=1
+                    print('PLAYABLE',item.get('title','')[:80],flush=True)
+              except Exception as e: print('SKIP',str(e)[:70],flush=True)
+            print('VERIFIED',verified,flush=True)
+            if verified==0: raise RuntimeError('No playable MP3 in first eight results')
+          PY
