@@ -1,4 +1,4 @@
-name: Build Pirate Radio W92LF APK
+name: Build Pirate Radio W92LF Native APK
 on:
   push:
     branches: [main]
@@ -11,8 +11,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack Pirate Radio W92LF source
-        run: base64 -d pirate-w92lf-src.tar.gz.b64 | tar -xz
+      - name: Unpack native W92LF source
+        run: base64 -d w92lf-native-v3-src.tar.gz.b64 | tar -xz
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -27,10 +27,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Compile Pirate Radio W92LF APK
+      - name: Compile Android APK
         run: gradle :app:assembleDebug --no-daemon --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: PirateRadioW92LF-APK
+          name: PirateRadioW92LF-Native-v3-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
